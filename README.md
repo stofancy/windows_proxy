@@ -72,4 +72,4 @@ Feel free to open issues for feature requests or bug reports.
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
