@@ -38,6 +38,14 @@ proxyoff
 - Git
 - npm
 
+## Working in Process
+
+1. The `reviewing before setting proxy` step should move to the specific tools file.
+2. Test the tools is existing(installed) or not before apply the proxy set/unset.
+   1. skip set/unset if the tool not existing(installed).
+   2. continue only if the tool is existing.
+3. enhance the final summarize message.
+
 ## Planned Support (Future)
 
 - pnpm
@@ -47,14 +55,18 @@ proxyoff
 - nuget
 - Other commonly used package management tools for developers
 
+
 ## How to Contribute
 
 Contributions are welcome! To contribute:
 
 1. Fork this repository.
 2. Create a new branch for your feature or bugfix.
-3. Make your changes and add tests if applicable.
-4. Submit a pull request with a clear description of your changes.
+3. To add support for a new tool, create a new file in the `proxy_tools/` folder (e.g., `pnpm.ps1`) and implement two functions: `Set-<Tool>Proxy` and `Unset-<Tool>Proxy`.
+   - Each function should handle setting or unsetting the proxy for that tool only.
+   - If a tool should not be managed, simply remove its file from `proxy_tools/`.
+4. Make any other necessary changes and add tests if applicable.
+5. Submit a pull request with a clear description of your changes.
 
 Feel free to open issues for feature requests or bug reports.
 
