@@ -14,10 +14,32 @@ if (!(Test-Path $PROFILE)) {
 }
 
 
+
+# Copy Set-Proxy.ps1 and Unset-Proxy.ps1 to the user's WindowsPowerShell directory
+$targetDir = Join-Path $env:USERPROFILE 'Documents\WindowsPowerShell'
+$repoDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$setProxySource = Join-Path $repoDir 'Set-Proxy.ps1'
+$unsetProxySource = Join-Path $repoDir 'Unset-Proxy.ps1'
+$setProxyTarget = Join-Path $targetDir 'Set-Proxy.ps1'
+$unsetProxyTarget = Join-Path $targetDir 'Unset-Proxy.ps1'
+
+if (Test-Path $setProxySource) {
+    Copy-Item -Path $setProxySource -Destination $setProxyTarget -Force
+    Write-Host "[INFO] Copied Set-Proxy.ps1 to $setProxyTarget"
+} else {
+    Write-Host "[WARNING] Set-Proxy.ps1 not found in repo directory."
+}
+if (Test-Path $unsetProxySource) {
+    Copy-Item -Path $unsetProxySource -Destination $unsetProxyTarget -Force
+    Write-Host "[INFO] Copied Unset-Proxy.ps1 to $unsetProxyTarget"
+} else {
+    Write-Host "[WARNING] Unset-Proxy.ps1 not found in repo directory."
+}
+
 # Add the proxyoff function to the profile if not already present
 $functionDefinition = @"
 function proxyoff {
-    & 'C:\Users\ztmdsbt\Desktop\Unset-Proxy.ps1'
+    & (Join-Path $env:USERPROFILE 'Documents\\WindowsPowerShell\\Unset-Proxy.ps1')
 }
 "@
 if (-not (Select-String -Path $PROFILE -Pattern 'function proxyoff' -Quiet)) {
@@ -30,7 +52,7 @@ if (-not (Select-String -Path $PROFILE -Pattern 'function proxyoff' -Quiet)) {
 # Add the proxyon function to the profile if not already present
 $proxyOnDefinition = @"
 function proxyon {
-    & 'C:\Users\ztmdsbt\Documents\WindowsPowerShell\Set-Proxy.ps1'C:\Users\ztmdsbt\Desktop\Unset-Proxy.ps1
+    & (Join-Path $env:USERPROFILE 'Documents\\WindowsPowerShell\\Set-Proxy.ps1')
 }
 "@
 if (-not (Select-String -Path $PROFILE -Pattern 'function proxyon' -Quiet)) {
