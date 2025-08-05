@@ -40,11 +40,11 @@ proxyoff
 
 ## Working in Process
 
-1. The `reviewing before setting proxy` step should move to the specific tools file.
+1. The `reviewing before setting proxy` step should to be moved after all tool files are read, so that we know which tools will be setup for better summarize, which means the logic should be dynamically, currently it's hardcoded for only several tools.
 2. Test the tools is existing(installed) or not before apply the proxy set/unset.
    1. skip set/unset if the tool not existing(installed).
    2. continue only if the tool is existing.
-3. enhance the final summarize message.
+3. Enhance the final summarize message.
 
 ## Planned Support (Future)
 

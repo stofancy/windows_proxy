@@ -392,19 +392,25 @@ if (-not $httpTest.success -or -not $httpsTest.success) {
 }
 
 
-# Load and call set-proxy functions for each tool in proxy_tools
+# Load and call set-proxy functions for each tool in proxy_tools, only if the tool is installed (file name = tool command)
 $proxyToolsPath = Join-Path $PSScriptRoot 'proxy_tools'
 if (Test-Path $proxyToolsPath) {
     $toolFiles = Get-ChildItem -Path $proxyToolsPath -Filter '*.ps1' | Sort-Object Name
     foreach ($toolFile in $toolFiles) {
+        $toolName = $toolFile.BaseName
+        # Always run for env, otherwise check if tool exists
+        if ($toolName -ne 'env' -and $null -eq (Get-Command $toolName -ErrorAction SilentlyContinue)) {
+            Write-Host "[$toolName] Not installed. Skipping $toolName proxy setup." -ForegroundColor Yellow
+            continue
+        }
         . $toolFile.FullName
         $setFunc = (Get-Content $toolFile.FullName | Select-String -Pattern 'function (Set-[A-Za-z]+Proxy)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
         if ($setFunc) {
             try {
                 & $setFunc $proxyUrl
-                Write-Host "Set proxy for $($toolFile.BaseName) using $setFunc" -ForegroundColor Cyan
+                Write-Host "Set proxy for $toolName using $setFunc" -ForegroundColor Cyan
             } catch {
-                Write-Host "Failed to set proxy for $($toolFile.BaseName): $_" -ForegroundColor Yellow
+                Write-Host "Failed to set proxy for $toolName: $_" -ForegroundColor Yellow
             }
         }
     }

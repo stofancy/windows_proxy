@@ -18,19 +18,39 @@ function Test-CommandExists($command) {
 Write-Host "=== Fast Proxy Cleanup ===" -ForegroundColor Cyan
 
 
-# Load and call unset-proxy functions for each tool in proxy_tools
+# Load and call unset-proxy functions for each tool in proxy_tools, only if the tool is installed (file name = tool command)
 $proxyToolsPath = Join-Path $PSScriptRoot 'proxy_tools'
 if (Test-Path $proxyToolsPath) {
     $toolFiles = Get-ChildItem -Path $proxyToolsPath -Filter '*.ps1' | Sort-Object Name
     foreach ($toolFile in $toolFiles) {
+        $toolName = $toolFile.BaseName
+        if ($toolName -eq 'env') {
+            # Always run env
+            . $toolFile.FullName
+            $unsetFunc = (Get-Content $toolFile.FullName | Select-String -Pattern 'function (Unset-[A-Za-z]+Proxy)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+            if ($unsetFunc) {
+                try {
+                    & $unsetFunc
+                    Write-Host "Unset proxy for $toolName using $unsetFunc" -ForegroundColor Cyan
+                } catch {
+                    Write-Host "Failed to unset proxy for $toolName: $_" -ForegroundColor Yellow
+                }
+            }
+            continue
+        }
+        # For all other tools, check if tool exists
+        if ($null -eq (Get-Command $toolName -ErrorAction SilentlyContinue)) {
+            Write-Host "[$toolName] Not installed. Skipping $toolName proxy cleanup." -ForegroundColor Yellow
+            continue
+        }
         . $toolFile.FullName
         $unsetFunc = (Get-Content $toolFile.FullName | Select-String -Pattern 'function (Unset-[A-Za-z]+Proxy)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
         if ($unsetFunc) {
             try {
                 & $unsetFunc
-                Write-Host "Unset proxy for $($toolFile.BaseName) using $unsetFunc" -ForegroundColor Cyan
+                Write-Host "Unset proxy for $toolName using $unsetFunc" -ForegroundColor Cyan
             } catch {
-                Write-Host "Failed to unset proxy for $($toolFile.BaseName): $_" -ForegroundColor Yellow
+                Write-Host "Failed to unset proxy for $toolName: $_" -ForegroundColor Yellow
             }
         }
     }
