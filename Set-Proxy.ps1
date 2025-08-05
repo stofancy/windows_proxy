@@ -410,7 +410,7 @@ if (Test-Path $proxyToolsPath) {
                 & $setFunc $proxyUrl
                 Write-Host "Set proxy for $toolName using $setFunc" -ForegroundColor Cyan
             } catch {
-                Write-Host "Failed to set proxy for $toolName: $_" -ForegroundColor Yellow
+                Write-Host ("Failed to set proxy for {0}: {1}" -f $toolName, $error[0]) -ForegroundColor Yellow
             }
         }
     }

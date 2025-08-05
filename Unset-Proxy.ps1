@@ -33,7 +33,7 @@ if (Test-Path $proxyToolsPath) {
                     & $unsetFunc
                     Write-Host "Unset proxy for $toolName using $unsetFunc" -ForegroundColor Cyan
                 } catch {
-                    Write-Host "Failed to unset proxy for $toolName: $_" -ForegroundColor Yellow
+                Write-Host ("Failed to unset proxy for {0}: {1}" -f $toolName, $error[0]) -ForegroundColor Yellow
                 }
             }
             continue
@@ -50,7 +50,7 @@ if (Test-Path $proxyToolsPath) {
                 & $unsetFunc
                 Write-Host "Unset proxy for $toolName using $unsetFunc" -ForegroundColor Cyan
             } catch {
-                Write-Host "Failed to unset proxy for $toolName: $_" -ForegroundColor Yellow
+                Write-Host ("Failed to unset proxy for {0}: {1}" -f $toolName, $error[0]) -ForegroundColor Yellow
             }
         }
     }
