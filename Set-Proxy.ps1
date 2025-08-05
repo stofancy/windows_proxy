@@ -391,34 +391,25 @@ if (-not $httpTest.success -or -not $httpsTest.success) {
     }
 }
 
-# Set environment variables (User scope)
-[Environment]::SetEnvironmentVariable('HTTP_PROXY', $proxyUrl, 'User')
-[Environment]::SetEnvironmentVariable('HTTPS_PROXY', $httpsProxyUrl, 'User')
-[Environment]::SetEnvironmentVariable('http_proxy', $proxyUrl, 'User')
-[Environment]::SetEnvironmentVariable('https_proxy', $httpsProxyUrl, 'User')
 
-# Set for current session
-$env:HTTP_PROXY = $proxyUrl
-$env:HTTPS_PROXY = $httpsProxyUrl
-$env:http_proxy = $proxyUrl
-$env:https_proxy = $httpsProxyUrl
-
-# Git (if installed)
-if (Test-CommandExists "git") {
-    Write-Host "Setting Git proxy..." -ForegroundColor Cyan
-    git config --global http.proxy $proxyUrl
-    git config --global https.proxy $httpsProxyUrl
+# Load and call set-proxy functions for each tool in proxy_tools
+$proxyToolsPath = Join-Path $PSScriptRoot 'proxy_tools'
+if (Test-Path $proxyToolsPath) {
+    $toolFiles = Get-ChildItem -Path $proxyToolsPath -Filter '*.ps1' | Sort-Object Name
+    foreach ($toolFile in $toolFiles) {
+        . $toolFile.FullName
+        $setFunc = (Get-Content $toolFile.FullName | Select-String -Pattern 'function (Set-[A-Za-z]+Proxy)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+        if ($setFunc) {
+            try {
+                & $setFunc $proxyUrl
+                Write-Host "Set proxy for $($toolFile.BaseName) using $setFunc" -ForegroundColor Cyan
+            } catch {
+                Write-Host "Failed to set proxy for $($toolFile.BaseName): $_" -ForegroundColor Yellow
+            }
+        }
+    }
 } else {
-    Write-Host "Git not found. Skipping Git proxy setup." -ForegroundColor Yellow
-}
-
-# npm (if installed)
-if (Test-CommandExists "npm") {
-    Write-Host "Setting npm proxy..." -ForegroundColor Cyan
-    npm config set proxy $proxyUrl
-    npm config set https-proxy $httpsProxyUrl
-} else {
-    Write-Host "npm not found. Skipping npm proxy setup." -ForegroundColor Yellow
+    Write-Host "proxy_tools folder not found. No tool-specific proxy settings applied." -ForegroundColor Yellow
 }
 
 Write-Host ""

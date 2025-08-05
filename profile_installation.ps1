@@ -15,13 +15,15 @@ if (!(Test-Path $PROFILE)) {
 
 
 
-# Copy Set-Proxy.ps1 and Unset-Proxy.ps1 to the user's WindowsPowerShell directory
+# Copy Set-Proxy.ps1, Unset-Proxy.ps1, and proxy_tools folder to the user's WindowsPowerShell directory (overwrite)
 $targetDir = Join-Path $env:USERPROFILE 'Documents\WindowsPowerShell'
 $repoDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $setProxySource = Join-Path $repoDir 'Set-Proxy.ps1'
 $unsetProxySource = Join-Path $repoDir 'Unset-Proxy.ps1'
+$proxyToolsSource = Join-Path $repoDir 'proxy_tools'
 $setProxyTarget = Join-Path $targetDir 'Set-Proxy.ps1'
 $unsetProxyTarget = Join-Path $targetDir 'Unset-Proxy.ps1'
+$proxyToolsTarget = Join-Path $targetDir 'proxy_tools'
 
 if (Test-Path $setProxySource) {
     Copy-Item -Path $setProxySource -Destination $setProxyTarget -Force
@@ -34,6 +36,15 @@ if (Test-Path $unsetProxySource) {
     Write-Host "[INFO] Copied Unset-Proxy.ps1 to $unsetProxyTarget"
 } else {
     Write-Host "[WARNING] Unset-Proxy.ps1 not found in repo directory."
+}
+if (Test-Path $proxyToolsSource) {
+    if (Test-Path $proxyToolsTarget) {
+        Remove-Item -Path $proxyToolsTarget -Recurse -Force
+    }
+    Copy-Item -Path $proxyToolsSource -Destination $proxyToolsTarget -Recurse -Force
+    Write-Host "[INFO] Copied proxy_tools folder to $proxyToolsTarget (overwrite)"
+} else {
+    Write-Host "[WARNING] proxy_tools folder not found in repo directory."
 }
 
 # Add the proxyoff function to the profile if not already present

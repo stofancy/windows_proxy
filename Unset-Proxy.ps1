@@ -17,55 +17,25 @@ function Test-CommandExists($command) {
 
 Write-Host "=== Fast Proxy Cleanup ===" -ForegroundColor Cyan
 
-# Git (if installed)
-if (Test-CommandExists "git") {
-    Write-Host "Removing Git proxy settings..." -ForegroundColor Cyan
-    git config --global --unset http.proxy
-    git config --global --unset https.proxy
-}
-else {
-    Write-Host "Git not found. Skipping Git proxy cleanup." -ForegroundColor Yellow
-}
 
-# npm (if installed)
-$usingNvm = $false
-if (Test-CommandExists "npm") {
-    Write-Host "Removing npm proxy settings..." -ForegroundColor Cyan
-    npm config delete proxy
-    npm config delete https-proxy
-}
-elseif (Test-CommandExists "nvm") {
-    $usingNvm = $true
-    Write-Host "npm not found, but nvm is installed." -ForegroundColor Yellow
-    Write-Host "Tip: Proxy settings are per-Node-version. Re-run this script after switching versions." -ForegroundColor Magenta
-}
-else {
-    Write-Host "Node.js/npm not found. Skipping npm proxy cleanup." -ForegroundColor Yellow
-    Write-Host "Tip: Install Node.js or use nvm-windows to manage versions:" -ForegroundColor DarkGray
-    Write-Host "  winget install nvm-windows" -ForegroundColor Magenta
-    Write-Host "  nvm install {{version}}" -ForegroundColor Magenta
-    Write-Host "  nvm use {{version}}" -ForegroundColor Magenta
-}
-
-# Clear session variables (instant)
-$proxyVars = @("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy")
-foreach ($var in $proxyVars) {
-    Remove-Item "Env:\$var" -ErrorAction SilentlyContinue
-}
-
-# Fast User/Machine cleanup (registry-based)
-foreach ($var in $proxyVars) {
-    # User scope
-    if ($null -ne [Environment]::GetEnvironmentVariable($var, "User")) {
-        Set-ItemProperty -Path "HKCU:\Environment" -Name $var -Value $null -ErrorAction SilentlyContinue
-    }
-    # Machine scope (Admin only)
-    if (([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
-        if (Get-ItemProperty -Path $regPath -Name $var -ErrorAction SilentlyContinue) {
-            Remove-ItemProperty -Path $regPath -Name $var -ErrorAction SilentlyContinue
+# Load and call unset-proxy functions for each tool in proxy_tools
+$proxyToolsPath = Join-Path $PSScriptRoot 'proxy_tools'
+if (Test-Path $proxyToolsPath) {
+    $toolFiles = Get-ChildItem -Path $proxyToolsPath -Filter '*.ps1' | Sort-Object Name
+    foreach ($toolFile in $toolFiles) {
+        . $toolFile.FullName
+        $unsetFunc = (Get-Content $toolFile.FullName | Select-String -Pattern 'function (Unset-[A-Za-z]+Proxy)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+        if ($unsetFunc) {
+            try {
+                & $unsetFunc
+                Write-Host "Unset proxy for $($toolFile.BaseName) using $unsetFunc" -ForegroundColor Cyan
+            } catch {
+                Write-Host "Failed to unset proxy for $($toolFile.BaseName): $_" -ForegroundColor Yellow
+            }
         }
     }
+} else {
+    Write-Host "proxy_tools folder not found. No tool-specific proxy cleanup applied." -ForegroundColor Yellow
 }
 
 Write-Host "`nProxy cleanup completed!" -ForegroundColor Green
